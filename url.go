@@ -25,6 +25,15 @@ type ThumborOptions struct {
 	Bottom  int
 }
 
+func (c *Client) GetLocalCryptedThumborPath(imagePath string, options ThumborOptions) (url string, err error) {
+	imageURL := fmt.Sprintf("%s/%s", c.url, imagePath)
+	return GetCryptedThumborPath(c.secret, imageURL, options)
+}
+
+func (c *Client) GetCryptedThumborPath(imageURL string, options ThumborOptions) (url string, err error) {
+	return GetCryptedThumborPath(c.secret, imageURL, options)
+}
+
 func GetCryptedThumborPath(key, imageURL string, options ThumborOptions) (url string, err error) {
 	var partial string
 	if partial, err = GetThumborPath(imageURL, options); err != nil {
