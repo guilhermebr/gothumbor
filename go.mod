@@ -1,3 +1,7 @@
-module github.com/globocom/gothumbor
+module github.com/guilhermebr/gothumbor
 
-go 1.21
+go 1.25.0
+
+require github.com/stretchr/testify v1.12.1
+
+require go.yaml.in/yaml/v3 v3.0.5 // indirect

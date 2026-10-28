@@ -11,8 +11,6 @@ const (
 	imageURL     = "http://" + baseImageURL
 	width        = 300
 	height       = 200
-	encryptedURL = "8ammJH8D-7tXy6kU3lTvoXlhu4o=/300x200/my.server.com/some/path/to/image.jpg"
-	unsafeURL    = "/300x200/my.server.com/some/path/to/image.jpg"
 )
 
 func TestGetUrlPartialWithCrop(t *testing.T) {

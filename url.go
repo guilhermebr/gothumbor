@@ -2,13 +2,14 @@ package gothumbor
 
 import (
 	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/sha1" // #nosec G505 -- required by the Thumbor URL signing protocol
 	"encoding/base64"
 	"fmt"
 	"net/url"
 	"strings"
 )
 
+// ThumborOptions describes the image operations encoded in a Thumbor path.
 type ThumborOptions struct {
 	Trim    bool
 	Width   int
@@ -26,29 +27,29 @@ type ThumborOptions struct {
 	Bottom  int
 }
 
-func (c *Client) GetCryptedThumborPath(imageURL string, options ThumborOptions) (url string, err error) {
+// GetCryptedThumborPath returns the signed Thumbor path for imageURL using the client secret.
+func (c *Client) GetCryptedThumborPath(imageURL string, options ThumborOptions) (string, error) {
 	return GetCryptedThumborPath(c.secret, imageURL, options)
 }
 
-func GetCryptedThumborPath(key, imageURL string, options ThumborOptions) (url string, err error) {
-	var partial string
-	if partial, err = GetThumborPath(imageURL, options); err != nil {
-		return
+// GetCryptedThumborPath returns the Thumbor path for imageURL signed with key.
+func GetCryptedThumborPath(key, imageURL string, options ThumborOptions) (string, error) {
+	partial, err := GetThumborPath(imageURL, options)
+	if err != nil {
+		return "", err
 	}
 	hash := hmac.New(sha1.New, []byte(key))
 	hash.Write([]byte(partial))
-	message := hash.Sum(nil)
-	url = base64.URLEncoding.EncodeToString(message)
-	url = strings.Join([]string{url, partial}, "/")
-	return
+	signature := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+	return signature + "/" + partial, nil
 }
 
-func GetThumborPath(imageURL string, options ThumborOptions) (path string, err error) {
+// GetThumborPath returns the unsigned Thumbor path for imageURL.
+func GetThumborPath(imageURL string, options ThumborOptions) (string, error) {
 	return getURLParts(imageURL, options)
 }
 
-func getURLParts(imageURL string, options ThumborOptions) (urlPartial string, err error) {
-
+func getURLParts(imageURL string, options ThumborOptions) (string, error) {
 	var parts []string
 
 	partialObject, err := url.Parse(imageURL)
@@ -92,18 +93,10 @@ func getURLParts(imageURL string, options ThumborOptions) (urlPartial string, er
 		parts = append(parts, "smart")
 	}
 
-	filters := []string{}
-	for _, value := range options.Filters {
-		filters = append(filters, value)
-	}
-
 	if len(options.Filters) > 0 {
-		filtersValue := strings.Join(filters, ":")
-		parts = append(parts, "filters:"+filtersValue)
+		parts = append(parts, "filters:"+strings.Join(options.Filters, ":"))
 	}
 
 	parts = append(parts, newImageURL)
-	urlPartial = strings.Join(parts, "/")
-
-	return
+	return strings.Join(parts, "/"), nil
 }
