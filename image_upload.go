@@ -29,17 +29,22 @@ func (c *Client) ImageUpload(ctx context.Context, imageName string, body io.Read
 }
 
 // ImageDelete deletes the image at imagePath, relative to the Thumbor /image endpoint.
-// Paths with empty, "." or ".." segments are rejected with ErrInvalidImagePath.
-// The caller must close the returned response body.
+// imagePath may be percent-encoded (as in Thumbor's Location header). Segments that
+// decode to empty, ".", ".." or contain a slash or backslash are rejected with
+// ErrInvalidImagePath. The caller must close the returned response body.
 func (c *Client) ImageDelete(ctx context.Context, imagePath string) (*http.Response, error) {
 	segments := strings.Split(strings.Trim(imagePath, "/"), "/")
+	escaped := make([]string, 0, len(segments)+1)
+	escaped = append(escaped, "image")
 	for _, s := range segments {
-		if s == "" || s == "." || s == ".." {
+		decoded, err := url.PathUnescape(s)
+		if err != nil || decoded == "" || decoded == "." || decoded == ".." || strings.ContainsAny(decoded, `/\`) {
 			return nil, fmt.Errorf("%w: %q", ErrInvalidImagePath, imagePath)
 		}
+		escaped = append(escaped, url.PathEscape(decoded))
 	}
-	// #nosec G125 -- segments are validated above; escaping here would double-encode
-	endpoint, err := url.JoinPath(c.URL, append([]string{"image"}, segments...)...)
+	// #nosec G125 -- every element is decoded, validated and re-escaped with url.PathEscape above
+	endpoint, err := url.JoinPath(c.URL, escaped...)
 	if err != nil {
 		return nil, err
 	}

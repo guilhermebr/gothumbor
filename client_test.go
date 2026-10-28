@@ -101,6 +101,8 @@ func TestClientImageDelete(t *testing.T) {
 		{name: "simple id", imagePath: "abc123", wantPath: "/image/abc123"},
 		{name: "nested path", imagePath: "abc123/photo.jpg", wantPath: "/image/abc123/photo.jpg"},
 		{name: "surrounding slashes", imagePath: "/abc123/", wantPath: "/image/abc123"},
+		{name: "raw space", imagePath: "abc123/my photo.jpg", wantPath: "/image/abc123/my photo.jpg"},
+		{name: "encoded space", imagePath: "abc123/my%20photo.jpg", wantPath: "/image/abc123/my photo.jpg"},
 	}
 
 	for _, tt := range tests {
@@ -129,6 +131,11 @@ func TestClientImageDeleteInvalidPath(t *testing.T) {
 		{name: "nested traversal", imagePath: "abc/../../admin"},
 		{name: "dot segment", imagePath: "abc/./photo.jpg"},
 		{name: "empty segment", imagePath: "abc//photo.jpg"},
+		{name: "encoded parent", imagePath: "%2e%2e/admin"},
+		{name: "encoded slash", imagePath: "abc%2F..%2F..%2Fadmin"},
+		{name: "backslash", imagePath: `..\admin`},
+		{name: "encoded backslash", imagePath: "..%5Cadmin"},
+		{name: "invalid escape", imagePath: "photo%.jpg"},
 	}
 
 	for _, tt := range tests {
