@@ -11,6 +11,7 @@ linters:
     - bodyclose
     - gosec
     - misspell
+    - modernize
 formatters:
   enable:
     - gofmt

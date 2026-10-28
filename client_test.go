@@ -56,7 +56,7 @@ func TestNewClient(t *testing.T) {
 		srv, _ := newTestServer(t, http.StatusOK)
 		c := gothumbor.NewClient(srv.URL, "secret", gothumbor.WithHTTPClient(hc))
 
-		resp, err := c.ImageDelete(context.Background(), "abc")
+		resp, err := c.ImageDelete(t.Context(), "abc")
 		require.NoError(t, err)
 		defer closeBody(t, resp)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -79,7 +79,7 @@ func TestClientImageUpload(t *testing.T) {
 			srv, captured := newTestServer(t, tt.status)
 			c := gothumbor.NewClient(srv.URL+tt.base, "secret")
 
-			resp, err := c.ImageUpload(context.Background(), "photo.jpg", strings.NewReader("image-bytes"))
+			resp, err := c.ImageUpload(t.Context(), "photo.jpg", strings.NewReader("image-bytes"))
 			require.NoError(t, err)
 			defer closeBody(t, resp)
 
@@ -100,6 +100,7 @@ func TestClientImageDelete(t *testing.T) {
 	}{
 		{name: "simple id", imagePath: "abc123", wantPath: "/image/abc123"},
 		{name: "nested path", imagePath: "abc123/photo.jpg", wantPath: "/image/abc123/photo.jpg"},
+		{name: "surrounding slashes", imagePath: "/abc123/", wantPath: "/image/abc123"},
 	}
 
 	for _, tt := range tests {
@@ -107,7 +108,7 @@ func TestClientImageDelete(t *testing.T) {
 			srv, captured := newTestServer(t, http.StatusNoContent)
 			c := gothumbor.NewClient(srv.URL, "secret")
 
-			resp, err := c.ImageDelete(context.Background(), tt.imagePath)
+			resp, err := c.ImageDelete(t.Context(), tt.imagePath)
 			require.NoError(t, err)
 			defer closeBody(t, resp)
 
@@ -118,11 +119,36 @@ func TestClientImageDelete(t *testing.T) {
 	}
 }
 
+func TestClientImageDeleteInvalidPath(t *testing.T) {
+	tests := []struct {
+		name      string
+		imagePath string
+	}{
+		{name: "empty", imagePath: ""},
+		{name: "parent traversal", imagePath: "../admin"},
+		{name: "nested traversal", imagePath: "abc/../../admin"},
+		{name: "dot segment", imagePath: "abc/./photo.jpg"},
+		{name: "empty segment", imagePath: "abc//photo.jpg"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv, captured := newTestServer(t, http.StatusNoContent)
+			c := gothumbor.NewClient(srv.URL, "secret")
+
+			resp, err := c.ImageDelete(t.Context(), tt.imagePath)
+			closeBody(t, resp)
+			require.ErrorIs(t, err, gothumbor.ErrInvalidImagePath)
+			assert.Empty(t, captured.method, "no request should reach the server")
+		})
+	}
+}
+
 func TestClientContextCanceled(t *testing.T) {
 	srv, _ := newTestServer(t, http.StatusOK)
 	c := gothumbor.NewClient(srv.URL, "secret")
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
 	resp, err := c.ImageUpload(ctx, "photo.jpg", strings.NewReader("x"))

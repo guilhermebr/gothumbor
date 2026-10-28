@@ -4,7 +4,7 @@ gothumbor
 [![Go Reference](https://pkg.go.dev/badge/github.com/guilhermebr/gothumbor.svg)](https://pkg.go.dev/github.com/guilhermebr/gothumbor)
 [![ci](https://github.com/guilhermebr/gothumbor/actions/workflows/ci.yml/badge.svg)](https://github.com/guilhermebr/gothumbor/actions/workflows/ci.yml)
 
-gothumbor allows easy usage of [Thumbor] in Go. Requires Go 1.25+.
+gothumbor allows easy usage of [Thumbor] in Go. Requires Go 1.27+.
 
 
 Installation

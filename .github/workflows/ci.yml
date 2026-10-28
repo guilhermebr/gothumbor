@@ -18,18 +18,15 @@ jobs:
           go-version: stable
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.11
+          version: v2.15
 
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [oldstable, stable]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: stable
       - run: go test ./... -race -count=1 -coverprofile=coverage.out
 
   security:
